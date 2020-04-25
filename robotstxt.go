@@ -19,9 +19,9 @@ import (
 
 type RobotsData struct {
 	// private
-	groups      map[string]*Group
-	allowAll    bool
-	disallowAll bool
+	Groups      map[string]*Group
+	AllowAll    bool
+	DisallowAll bool
 	Host        string
 	Sitemaps    []string
 }
@@ -56,11 +56,14 @@ func (e ParseError) Error() string {
 	return b.String()
 }
 
-var allowAll = &RobotsData{allowAll: true}
-var disallowAll = &RobotsData{disallowAll: true}
-var emptyGroup = &Group{}
+// var allowAll = &RobotsData{allowAll: true}
+// var disallowAll = &RobotsData{disallowAll: true}
+// var emptyGroup = &Group{}
 
 func FromStatusAndBytes(statusCode int, body []byte) (*RobotsData, error) {
+        r := &RobotsData{}
+        // r.groups = &Group{}
+
 	switch {
 	case statusCode >= 200 && statusCode < 300:
 		return FromBytes(body)
@@ -72,13 +75,15 @@ func FromStatusAndBytes(statusCode int, body []byte) (*RobotsData, error) {
 	// This is a "full allow" for crawling. Note: this includes 401
 	// "Unauthorized" and 403 "Forbidden" HTTP result codes.
 	case statusCode >= 400 && statusCode < 500:
-		return allowAll, nil
+                r.AllowAll = true
+		return r, nil
 
 	// From Google's spec:
 	// Server errors (5xx) are seen as temporary errors that result in a "full
 	// disallow" of crawling.
 	case statusCode >= 500 && statusCode < 600:
-		return disallowAll, nil
+                r.DisallowAll = true
+		return r, nil
 	}
 
 	return nil, errors.New("Unexpected status: " + strconv.Itoa(statusCode))
@@ -102,11 +107,13 @@ func FromResponse(res *http.Response) (*RobotsData, error) {
 
 func FromBytes(body []byte) (r *RobotsData, err error) {
 	var errs []error
+	r = &RobotsData{}
 
 	// special case (probably not worth optimization?)
 	trimmed := bytes.TrimSpace(body)
 	if len(trimmed) == 0 {
-		return allowAll, nil
+                r.AllowAll = true
+		return r, nil
 	}
 
 	sc := newByteScanner("bytes", true)
@@ -116,12 +123,12 @@ func FromBytes(body []byte) (r *RobotsData, err error) {
 
 	// special case worth optimization
 	if len(tokens) == 0 {
-		return allowAll, nil
+                r.AllowAll = true
+		return r, nil
 	}
 
-	r = &RobotsData{}
 	parser := newParser(tokens)
-	r.groups, r.Host, r.Sitemaps, errs = parser.parseAll()
+	r.Groups, r.Host, r.Sitemaps, errs = parser.parseAll()
 	if len(errs) > 0 {
 		return nil, newParseError(errs)
 	}
@@ -134,10 +141,10 @@ func FromString(body string) (r *RobotsData, err error) {
 }
 
 func (r *RobotsData) TestAgent(path, agent string) bool {
-	if r.allowAll {
+	if r.AllowAll {
 		return true
 	}
-	if r.disallowAll {
+	if r.DisallowAll {
 		return false
 	}
 
@@ -159,11 +166,11 @@ func (r *RobotsData) FindGroup(agent string) (ret *Group) {
 	var prefixLen int
 
 	agent = strings.ToLower(agent)
-	if ret = r.groups["*"]; ret != nil {
+	if ret = r.Groups["*"]; ret != nil {
 		// Weakest match possible
 		prefixLen = 1
 	}
-	for a, g := range r.groups {
+	for a, g := range r.Groups {
 		if a != "*" && strings.HasPrefix(agent, a) {
 			if l := len(a); l > prefixLen {
 				prefixLen = l
@@ -173,7 +180,7 @@ func (r *RobotsData) FindGroup(agent string) (ret *Group) {
 	}
 
 	if ret == nil {
-		return emptyGroup
+		return &Group{}
 	}
 	return
 }
