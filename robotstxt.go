@@ -27,15 +27,15 @@ type RobotsData struct {
 }
 
 type Group struct {
-	rules      []*rule
+	Rules      []*rule
 	Agent      string
 	CrawlDelay time.Duration
 }
 
 type rule struct {
-	path    string
-	allow   bool
-	pattern *regexp.Regexp
+	Path    string
+	Allow   bool
+	Pattern *regexp.Regexp
 }
 
 type ParseError struct {
@@ -187,7 +187,7 @@ func (r *RobotsData) FindGroup(agent string) (ret *Group) {
 
 func (g *Group) Test(path string) bool {
 	if r := g.findRule(path); r != nil {
-		return r.allow
+		return r.Allow
 	}
 
 	// From Google's spec:
@@ -208,23 +208,23 @@ func (g *Group) Test(path string) bool {
 func (g *Group) findRule(path string) (ret *rule) {
 	var prefixLen int
 
-	for _, r := range g.rules {
-		if r.pattern != nil {
-			if r.pattern.MatchString(path) {
+	for _, r := range g.Rules {
+		if r.Pattern != nil {
+			if r.Pattern.MatchString(path) {
 				// Consider this a match equal to the length of the pattern.
 				// From Google's spec:
 				// The order of precedence for rules with wildcards is undefined.
-				if l := len(r.pattern.String()); l > prefixLen {
-					prefixLen = len(r.pattern.String())
+				if l := len(r.Pattern.String()); l > prefixLen {
+					prefixLen = len(r.Pattern.String())
 					ret = r
 				}
 			}
-		} else if r.path == "/" && prefixLen == 0 {
+		} else if r.Path == "/" && prefixLen == 0 {
 			// Weakest match possible
 			prefixLen = 1
 			ret = r
 		} else if strings.HasPrefix(path, r.path) {
-			if l := len(r.path); l > prefixLen {
+			if l := len(r.Path); l > prefixLen {
 				prefixLen = l
 				ret = r
 			}
