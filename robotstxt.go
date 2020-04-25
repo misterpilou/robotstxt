@@ -223,7 +223,7 @@ func (g *Group) findRule(path string) (ret *rule) {
 			// Weakest match possible
 			prefixLen = 1
 			ret = r
-		} else if strings.HasPrefix(path, r.path) {
+		} else if strings.HasPrefix(path, r.Path) {
 			if l := len(r.Path); l > prefixLen {
 				prefixLen = l
 				ret = r

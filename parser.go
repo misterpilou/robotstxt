@@ -96,7 +96,7 @@ func (p *parser) parseAll() (groups map[string]*Group, host string, sitemaps []s
 					} else {
 						r = &rule{li.vs, false, nil}
 					}
-					parseGroupMap(groups, agents, func(g *Group) { g.rules = append(g.rules, r) })
+					parseGroupMap(groups, agents, func(g *Group) { g.Rules = append(g.Rules, r) })
 				}
 
 			case lAllow:
@@ -111,7 +111,7 @@ func (p *parser) parseAll() (groups map[string]*Group, host string, sitemaps []s
 					} else {
 						r = &rule{li.vs, true, nil}
 					}
-					parseGroupMap(groups, agents, func(g *Group) { g.rules = append(g.rules, r) })
+					parseGroupMap(groups, agents, func(g *Group) { g.Rules = append(g.Rules, r) })
 				}
 
 			case lHost:
